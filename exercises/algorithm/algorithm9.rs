@@ -1,10 +1,9 @@
 /*
-	heap
-	This question requires you to implement a binary heap function
+    heap
+    This question requires you to implement a binary heap function
 */
-// I AM NOT DONE
 
-use std::cmp::Ord;
+use std::cmp::PartialOrd;
 use std::default::Default;
 
 pub struct Heap<T>
@@ -18,7 +17,7 @@ where
 
 impl<T> Heap<T>
 where
-    T: Default,
+    T: Default + PartialOrd,
 {
     pub fn new(comparator: fn(&T, &T) -> bool) -> Self {
         Self {
@@ -38,6 +37,9 @@ where
 
     pub fn add(&mut self, value: T) {
         //TODO
+        self.items.push(value);
+        self.count += 1;
+        self.swim(self.count);
     }
 
     fn parent_idx(&self, idx: usize) -> usize {
@@ -58,7 +60,43 @@ where
 
     fn smallest_child_idx(&self, idx: usize) -> usize {
         //TODO
-		0
+        let lci = self.left_child_idx(idx);
+        let rci = self.right_child_idx(idx);
+
+        if self.items[lci] <= self.items[rci] {
+            lci
+        } else {
+            rci
+        }
+    }
+
+    pub fn swim(&mut self, mut idx: usize) {
+        while idx > 1 && (self.comparator)(&self.items[idx], &self.items[self.parent_idx(idx)]) {
+            let parent_idx = self.parent_idx(idx);
+            self.items.swap(idx, parent_idx);
+            idx = parent_idx;
+        }
+    }
+
+    pub fn sink(&mut self, mut idx: usize) {
+        while self.left_child_idx(idx) <= self.count {
+            let mut new_parent = self.left_child_idx(idx);
+            let right_child_idx = self.right_child_idx(idx);
+
+            if right_child_idx <= self.count
+                && (self.comparator)(&self.items[right_child_idx], &self.items[new_parent])
+            {
+                new_parent = right_child_idx;
+            }
+
+            if (self.comparator)(&self.items[idx], &self.items[new_parent]) {
+                break;
+            }
+
+            self.items.swap(idx, new_parent);
+
+            idx = new_parent;
+        }
     }
 }
 
@@ -79,13 +117,22 @@ where
 
 impl<T> Iterator for Heap<T>
 where
-    T: Default,
+    T: Default + PartialOrd,
 {
     type Item = T;
 
     fn next(&mut self) -> Option<T> {
         //TODO
-		None
+        if self.count == 0 {
+            return None;
+        }
+
+        let item = Some(self.items.swap_remove(1));
+        self.count -= 1;
+
+        self.sink(1);
+
+        item
     }
 }
 
